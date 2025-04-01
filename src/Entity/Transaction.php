@@ -2,51 +2,34 @@
 
 namespace App\Entity;
 
+use App\Repository\TransactionRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity(repositoryClass="App\Repository\TransactionRepository")
- */
+#[ORM\Entity(repositoryClass: TransactionRepository::class)]
 class Transaction
 {
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
-    private $id;
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
 
-    /**
-     * @ORM\Column(type="float")
-     */
-    private $amount; // Montant de la transaction
+    #[ORM\Column(type: Types::FLOAT)]
+    private ?float $amount = null;
 
-    /**
-     * @ORM\Column(type="datetime")
-     */
-    private $date; // Date de la transaction
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $date = null;
 
-    /**
-     * @ORM\Column(type="string", length=255)
-     */
-    private $name; // Nom du destinataire ou de la source
+    #[ORM\Column(length: 255)]
+    private ?string $label = null;
 
-    /**
-     * @ORM\Column(type="string", length=255)
-     */
-    private $label; // Libellé de la transaction
+    #[ORM\Column(length: 255)]
+    private ?string $category = null;
 
-    /**
-     * @ORM\Column(type="string", length=50)
-     */
-    private $category; // Catégorie de la transaction (ex: alimentation, transport, etc.)
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'transactions')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $user = null;
 
-    /**
-     * @ORM\Column(type="string", length=10)
-     */
-    private $type; // Type de transaction (ex: "ajout" ou "envoi")
-
-    // Getters et setters pour chaque champ
     public function getId(): ?int
     {
         return $this->id;
@@ -57,7 +40,7 @@ class Transaction
         return $this->amount;
     }
 
-    public function setAmount(float $amount): self
+    public function setAmount(float $amount): static
     {
         $this->amount = $amount;
         return $this;
@@ -68,20 +51,9 @@ class Transaction
         return $this->date;
     }
 
-    public function setDate(\DateTimeInterface $date): self
+    public function setDate(\DateTimeInterface $date): static
     {
         $this->date = $date;
-        return $this;
-    }
-
-    public function getName(): ?string
-    {
-        return $this->name;
-    }
-
-    public function setName(string $name): self
-    {
-        $this->name = $name;
         return $this;
     }
 
@@ -90,7 +62,7 @@ class Transaction
         return $this->label;
     }
 
-    public function setLabel(string $label): self
+    public function setLabel(string $label): static
     {
         $this->label = $label;
         return $this;
@@ -101,20 +73,20 @@ class Transaction
         return $this->category;
     }
 
-    public function setCategory(string $category): self
+    public function setCategory(string $category): static
     {
         $this->category = $category;
         return $this;
     }
 
-    public function getType(): ?string
+    public function getUser(): ?User
     {
-        return $this->type;
+        return $this->user;
     }
 
-    public function setType(string $type): self
+    public function setUser(?User $user): static
     {
-        $this->type = $type;
+        $this->user = $user;
         return $this;
     }
 }
