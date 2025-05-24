@@ -3,46 +3,47 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Service\PasswordHasher;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class AuthController extends AbstractController
 {
-    #[Route('/register', name: 'app_register', methods: ['POST'])]
-    public function register(
-        Request $request,
-        PasswordHasher $passwordHasher,
-        EntityManagerInterface $em,
-        ValidatorInterface $validator
-    ): JsonResponse {
-        $data = json_decode($request->getContent(), true);
+    #[Route('/api/login', name: 'api_login', methods: ['POST'])]
+public function login(
+    Request $request,
+    EntityManagerInterface $em,
+    UserPasswordHasherInterface $passwordHasher
+): JsonResponse {
+    $data = json_decode($request->getContent(), true);
+    
+    // Debug: Log les données reçues
+    error_log(print_r($data, true));
 
-        $user = new User();
-        $user->setEmail($data['email'] ?? '');
-        $user->setName($data['name'] ?? '');
-        $user->setPlainPassword($data['password'] ?? '');
-
-        // Validation
-        $errors = $validator->validate($user, null, ['registration']);
-        if (count($errors) > 0) {
-            return $this->json($errors, 400);
-        }
-
-        // Hashage du mot de passe
-        $passwordHasher->hashUserPassword($user);
-
-        // Persistance
-        $em->persist($user);
-        $em->flush();
-
-        return $this->json([
-            'status' => 'success',
-            'message' => 'User registered successfully'
-        ], 201);
+    if (!isset($data['email']) || !isset($data['password'])) {
+        return $this->json(['error' => 'Email and password required'], 400);
     }
-}
+
+    $user = $em->getRepository(User::class)->findOneBy(['email' => $data['email']]);
+
+    if (!$user) {
+        return $this->json(['error' => 'User not found'], 401);
+    }
+
+    if (!$passwordHasher->isPasswordValid($user, $data['password'])) {
+        return $this->json(['error' => 'Invalid password'], 401);
+    }
+
+    return $this->json([
+        'token' => 'generated-jwt-token', // À remplacer par un vrai token si vous utilisez JWT
+        'user' => [
+            'id' => $user->getId(),
+            'email' => $user->getEmail(),
+            'name' => $user->getName()
+        ]
+    ]);
+}}
